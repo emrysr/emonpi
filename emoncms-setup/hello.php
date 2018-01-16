@@ -92,7 +92,7 @@ p {
 
 <div id="page1">
   <div class="welcome">Welcome to your</div>
-  <div class="welcome2"><span style="color:#c8e9f6">emon</span><span>Pi</span></div>
+  <div class="welcome2"><span style="color:#c8e9f6">CydYnni</span><span>Hub</span></div>
   <p>This is a quick setup wizard to get you started.</p>
   <div style="clear:both; height:20px"></div>
 
@@ -122,11 +122,10 @@ p {
 </div>
 
 <div id="page2" style="display:none; text-align:center">
-  <div class="welcome">WiFi network setting saved. Rebooting system... please wait a couple of minutes before navigating to your emonpi's hostname:</div>
-  <div class="welcome2"><a href="http://emonpi.local">http://emonpi.local</a> <span style="color:#c8e9f6">or</span> <a href="http://emonpi">http://emonpi</a></div>
+  <div class="welcome">WiFi network setting saved. Rebooting system... please wait a couple of minutes before navigating to your hub's hostname:</div>
+  <div class="welcome2"><a href="http://cydynni.local">http://cydynni.local</a> <span style="color:#c8e9f6">or</span> <a href="http://cydynni">http://cydynni</a></div>
   <br>
-  <p>If the hostname does not work on your network, navigate to the IP address shown on the emonPi LCD.</p>
-  <p><b>Note:</b> If incorrect password is entered and wifi connection fails, connect emonpi via Ethernet to complete setup</p></p>
+  <p><b>Note:</b> If incorrect password is entered and wifi connection fails, connect hub via Ethernet to complete setup</p></p>
 
 </div>
 
