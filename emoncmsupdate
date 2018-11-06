@@ -3,7 +3,7 @@
 echo
 echo "================================="
 echo "Emoncms update started"
-echo "Emoncms update script V1.1.1"
+echo "Emoncms update script V1.2.0"
 echo
 
 date
@@ -12,38 +12,17 @@ echo
 #########################################################################################
 echo "#############################################################"
 echo
-# Check emonSD base image is minimum required release date, else don't update
+# Check emonSD version
 image_version=$(ls /boot | grep emonSD)
 echo "emonSD version: $image_version"
 echo
-
-if [ "$image_version" == "emonSD-07Nov16" ] || [ "$image_version" == "emonSD-03May16" ] || [ $image_version == "emonSD-26Oct17" ]; then
-  echo "emonSD base image check pass...continue update"
-else
-  echo "ERROR: emonSD base image old or undefined...update will not continue"
-  echo "See latest verson: https://github.com/openenergymonitor/emonpi/wiki/emonSD-pre-built-SD-card-Download-&-Change-Log"
-  echo "Stopping update"
-  exit
-fi
-echo
-echo "#############################################################"
 
 uid=`id -u`
 echo "EUID: $uid"
 
 if [ "$uid" = "0" ] ; then
-    # update is being ran mistakenly as root, need to remove all sudo crontab service runner entries
-    echo "update running as root: remove sudo crontab service runner entries"
-    crontab -l > mycron
-    if grep -Fxq " * * * * * /home/pi/emonpi/service-runner >> /var/log/service-runner.log 2>&1" mycron ; then
-        sed -i  "/\s\* \* \* \* \* \/home\/pi\/emonpi\/service-runner >> \/var\/log\/service-runner.log 2>&1/d" ./mycron
-    fi
-    if grep -Fxq "* * * * * /home/pi/emonpi/service-runner >> /var/log/service-runner.log 2>&1" mycron ; then
-        sed -i  "/\* \* \* \* \* \/home\/pi\/emonpi\/service-runner >> \/var\/log\/service-runner.log 2>&1/d" ./mycron
-    fi
-    crontab mycron
-    rm mycron
-    echo "switching to Pi user & restarting script"
+    # update is being ran mistakenly as root, switch to Pi user
+    echo "update running as root: switching to Pi user & restarting script"
     echo
     echo "**MANUAL SYSTEM REBOOT REQUIRED**"
     echo
@@ -51,30 +30,6 @@ if [ "$uid" = "0" ] ; then
     su -c $0 pi
     exit
 fi
-
-#########################################################################################
-
-# Add backup module service-runner
-echo "Checking cron tab for service runner entry..."
-crontab -l > mycron
-# Check crontab entry does not already exist, if not add new entry
-if ! grep -Fxq "* * * * * /home/pi/emonpi/service-runner >> /var/log/service-runner.log 2>&1" mycron ; then
-        echo "Add service runner cron entry"
-        echo "* * * * * /home/pi/emonpi/service-runner >> /var/log/service-runner.log 2>&1" >> mycron
-        crontab mycron
-else
-  echo "service runner crontab entry already installed"
-fi
-rm mycron
-
-# Check if double service runner (with space) entry exits, if so remove it
-crontab -l > mycron
-if grep -Fxq " * * * * * /home/pi/emonpi/service-runner >> /var/log/service-runner.log 2>&1" mycron ; then
-        echo "Remove duplicate service runner entry"
-        sed -i  "/\s\* \* \* \* \* \/home\/pi\/emonpi\/service-runner >> \/var\/log\/service-runner.log 2>&1/d" ./mycron
-        crontab mycron
-fi
-rm mycron
 
 #########################################################################################
 
@@ -128,7 +83,12 @@ if [ ! -f /etc/sudoers.d/emoncms-setup-sudoers ]; then
     echo "Emoncms setup module sudoers entry installed"
 fi
 
+#########################################################################################
 
+# Setup user group to enable reading pi GPU temperature
+#https://github.com/emoncms/emoncms/pull/869
+
+sudo usermod -G video www-data
 
 
 #########################################################################################
@@ -158,7 +118,7 @@ echo "NEW default settings.php md5: $new_default_settings_md5"
 
 
 if [ "$current_default_settings_md5" == "$current_settings_md5" ]; then
-  echo "settings.php had NOT been user modifed"
+  echo "settings.php has NOT been user modifed"
   settings_unmodified=true
 else
   echo "settings.php HAS been user modified"
@@ -175,7 +135,7 @@ if [ "$new_default_settings_md5" != "$current_default_settings_md5" ]; then
     echo "**ERROR: unable to autoupdate settings.php since user changes are present, manual review required**"
   fi
 else
- echo "No update required to settings.php"
+ echo "settings.php not updated"
 fi
 #########################################################################################
 
@@ -253,6 +213,35 @@ else
   cd /home/pi/postprocess
   git checkout emonpi
 fi
+
+if [ -d /home/pi/sync ]; then
+  echo "git pull /home/pi/sync"
+  cd /home/pi/sync
+  git checkout master
+  git pull
+  ln -sf /home/pi/sync/sync-module /var/www/emoncms/Modules/sync
+else
+  echo "git clone https://github.com/emoncms/sync"
+  cd /home/pi
+  git clone https://github.com/emoncms/sync
+  cd /home/pi/sync
+  git checkout master
+  ln -sf /home/pi/sync/sync-module /var/www/emoncms/Modules/sync
+fi
+
+if [ -d /var/www/emoncms/Modules/device ]; then
+  echo "git pull /var/www/emoncms/Modules/device"
+  cd /var/www/emoncms/Modules/device
+  git checkout master
+  git pull
+else
+  echo "git clone https://github.com/emoncms/device"
+  cd /var/www/emoncms/Modules
+  git clone https://github.com/emoncms/device
+  cd /var/www/emoncms/Modules/device
+  git checkout master
+fi
+
 
 if [ -d /home/pi/backup ]; then
   echo "git pull /home/pi/backup"

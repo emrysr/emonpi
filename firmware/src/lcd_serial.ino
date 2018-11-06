@@ -40,7 +40,7 @@ void serial_print_startup(int current_lcd_i2c_addr){
   {
     lcd.print(F("AC Wave Detected"));
     Serial.println(F("AC Wave Detected - Real Power calc enabled"));
-    if (USA==TRUE) Serial.print(F("USA mode > "));
+    if (USA) Serial.print(F("USA mode > "));
     Serial.print(F("Vcal: ")); Serial.println(Vcal);
     Serial.print(F("Vrms: ")); Serial.print(Vrms); Serial.println(F("V"));
     Serial.print(F("Phase Shift: ")); Serial.println(phase_shift);
@@ -49,7 +49,7 @@ void serial_print_startup(int current_lcd_i2c_addr){
   {
    lcd.print(F("AC NOT Detected"));
    Serial.println(F("AC NOT detected - Apparent Power calc enabled"));
-   if (USA==TRUE) Serial.println(F("USA mode"));
+   if (USA) Serial.println(F("USA mode"));
    Serial.print(F("Assuming VRMS: ")); Serial.print(Vrms); Serial.println(F("V"));
  }
 
@@ -59,18 +59,10 @@ lcd.setCursor(0, 1); lcd.print(F("Detected "));
     Serial.println(F("no CT detected"));
     lcd.print(F("No CT's"));
   }
-   else
-   {
-
-     if (CT1) {
-      Serial.println(F("CT 1 detect"));
-      lcd.print(F("CT1 "));
-    }
-     if (CT2) {
-      Serial.println(F("CT 2 detect"));
-      lcd.print(F("CT2"));
-    }
-   }
+  else{
+    Serial.print("Detected "); Serial.print(CT_count); Serial.print(" CT's");
+    lcd.print(CT_count); lcd.print(F(" CT's"));
+  }
 
   delay(2000);
 
@@ -92,8 +84,8 @@ lcd.setCursor(0, 1); lcd.print(F("Detected "));
   delay(2000);
 
   lcd.clear();
-  lcd.print(F("Raspberry Pi"));
-  lcd.setCursor(0, 1); lcd.print(F("Booting..."));
+  lcd.print(F("Booting..."));
+  lcd.setCursor(0, 1); lcd.print(F("Please wait"));
 
   if (RF_STATUS == 1){
     #if (RF69_COMPAT)

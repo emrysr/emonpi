@@ -1,10 +1,22 @@
 # Change Log - emonPi Discrete Sampling Firmware
 
-**See continous-sampling branch for continous sampling**
+**See continuous-sampling branch for continuous sampling**
+
+# V2.9.0 (16/01/18)
+
+- Allow CT's to be plugged in after unit has powered up. CT input will read zero if no CT is connected.
+
+```
+Program:   17886 bytes (54.6% Full)
+(.text + .data + .bootloader)
+
+Data:       1048 bytes (51.2% Full)
+(.data + .bss + .noinit)
+```
 
 # V2.8.4 (21/12/17)
 
-- V2.8.4: Correct USA voltage for apparent power sampling to 120V. Only affects battery / DC USB 5V operation. Does not effect when powering unit vi AC-AC adaptor.
+- Correct USA voltage for apparent power sampling to 120V. Only affects battery / DC USB 5V operation. Does not effect when powering unit vi AC-AC adaptor.
 
 ```
 Program:   17942 bytes (54.8% Full)

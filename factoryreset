@@ -33,36 +33,40 @@ else
 fi
 
 ans=n
-read -p "Shutdown when complete (y/n)? Else rebooting in 5s " -t 5 ans
+read -p "Shutdown when complete (y/n)? Else rebooting in 10s " -t 10 ans
 
+VERSION=$(sed 's/\..*//' /etc/debian_version)
 
+# if version is greater than 8 then we must be running Stretch or newer
+if [ "$VERSION"  -gt "8" ]; then
+        VERSION="stretch"
+        echo "Detected $VERSION or newer"
+else
+        VERSION="jessie"
+        echo "$VERSION or older distro detected"
+fi
 
 
 echo "Ensure tracking latest Emoncms & emonpi stable branch"
 cd /home/pi/emonpi
+git status
 git checkout master
+git reset --hard HEAD
 git pull
+git status
+
 cd /var/www/emoncms
+git status
 git checkout stable
+git reset --hard HEAD
 git pull
+git status
 
-echo "get latest updates"
 echo
-touch /tmp/emonpiupdate 
-if [[ $image == "old" ]]
-then
-   /home/pi/emonpi/./update
-else
-   /home/pi/emonpi/./service-runner-update.sh
-fi
-echo
-rpi-rw
-sudo /etc/init.d/emonhub stop
-sudo /etc/init.d/emoncms-nodes-service stop
-sudo /etc/init.d/feedwriter stop
-sudo /etc/init.d/mqtt_input stop
-
-sudo service redis-server restart
+sudo service emonhub stop
+sudo service feedwriter stop
+sudo service mqtt_input stop
+sudo service redis-server stop
 
 echo "remove old conf & backup files"
 sudo rm /home/pi/data/*.conf
@@ -73,7 +77,7 @@ touch /home/pi/data/emoncms.conf
 sudo chown pi:www-data /home/pi/data/emoncms.conf
 sudo chmod 664 /home/pi/data/emoncms.conf
 
-echo "emonpi default settings"
+echo "emonpi emoncms restore default settings"
 cp /var/www/emoncms/default.emonpi.settings.php /var/www/emoncms/settings.php
 
 if [[ $image == "old" ]]
@@ -81,17 +85,12 @@ then    # Legacy image use emonhub.conf without MQTT authenitication
    echo "Start with fresh config: copy LEGACY default emonhub.conf"
    echo "/home/pi/emonhub/conf/old.default.emonhub.conf /home/pi/data/emonhub.conf"
    cp /home/pi/emonhub/conf/old.default.emonhub.conf /home/pi/data/emonhub.conf
- 
-   echo "Resetting emonPi pi user password to raspberry"
-passwd pi<<EOF
-raspberry
-raspberry
-EOF
+
 else    # Newer Feb15+ image use latest emonhub.conf with MQTT node variable topic structure and MQTT authentication enabled
    echo "Start with fresh config: copy NEW default emonpi emonhub.conf"
    echo "cp /home/pi/emonhub/conf/emonpi.default.emonhub.conf /home/pi/data/emonhub.conf"
    cp /home/pi/emonhub/conf/emonpi.default.emonhub.conf /home/pi/data/emonhub.conf
-   
+ 
    echo "Resetting emonPi pi user password to emonpi2016"
 passwd pi<<EOF
 emonpi2016
@@ -134,6 +133,8 @@ sudo rm /home/pi/data/import -rf
 echo "clear WiFi config /etc/wpa_supplicant/wpa_supplicant.conf"
 echo "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev" > /etc/wpa_supplicant/wpa_supplicant.conf
 echo "update_config=1" >> /etc/wpa_supplicant/wpa_supplicant.conf
+echo "country=GB" >> /etc/wpa_supplicant/wpa_supplicant.conf
+sudo chmod 776 /etc/wpa_supplicant/wpa_supplicant.conf
 
 
 if [ -f /home/pi/data/dhcpd.leases ]; then
@@ -145,8 +146,13 @@ fi
 echo "remove git user credentials"
 sudo rm /home/pi/.gitconfig
 
-echo "restore nodered flow"
-cp /home/pi/oem_node-red/flows_emonpi.json /home/pi/data/node-red/flows_emonpi.json 
+echo "Set default emonpi default git credentials" 
+git config --global user.email "pi@emonpi.com"
+git config --global user.name "emonPi"
+
+# Dont touch NodeRED this is an Emoncms factory reset 
+#echo "restore nodered flow"
+#cp /home/pi/oem_node-red/flows_emonpi.json /home/pi/data/node-red/flows_emonpi.json 
 
 echo "Clear bash history"
 history -c
@@ -161,7 +167,59 @@ sudo dpkg-reconfigure openssh-server
 echo "Clean up packages"
 sudo apt-get clean
 
+if [ "$VERSION" = "stretch" ]; then
+   echo "Disabling SSH"
+   sudo update-rc.d ssh disable
+   sudo invoke-rc.d ssh stop
+   sudo rm /boot/ssh
+fi
 
+echo
+if [[ "$ans" == "" ]] ; then ans=n;fi
+if [[ "$ans" == "y" ]] ;then
+echo "Shutting down Raspberry Pi";
+sudo halt;
+else
+echo "REBOOTING Raspberry Pi";
+sudo init 6
+fi
+
+exit 0
+sudo rm /etc/ssh/ssh_host_*
+sudo dpkg-reconfigure openssh-server
+
+echo "Clean up packages"
+sudo apt-get clean
+
+if [ "$VERSION" = "stretch" ]; then
+   echo "Disabling SSH"
+   sudo update-rc.d ssh disable
+   sudo invoke-rc.d ssh stop
+   sudo rm /boot/ssh
+fi
+
+echo
+if [[ "$ans" == "" ]] ; then ans=n;fi
+if [[ "$ans" == "y" ]] ;then
+echo "Shutting down Raspberry Pi";
+sudo halt;
+else
+echo "REBOOTING Raspberry Pi";
+sudo init 6
+fi
+
+exit 0sudo rm /etc/ssh/ssh_host_*
+sudo dpkg-reconfigure openssh-server
+
+echo "Clean up packages"
+sudo apt-get clean
+
+if [ "$VERSION" = "stretch" ]; then
+   echo "Disabling SSH"
+   sudo update-rc.d ssh disable
+   sudo invoke-rc.d ssh stop
+   sudo rm /boot/ssh
+fi
 
 echo
 if [[ "$ans" == "" ]] ; then ans=n;fi
